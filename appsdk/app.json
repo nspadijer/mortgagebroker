@@ -1,0 +1,158 @@
+{
+  "name": "MortgageBroker",
+  "description": "Prequal made simple. Explore programs, run calculators, and start a secure application.",
+  "version": "0.1.0",
+  "icons": [
+    {
+      "src": "/assets/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "capabilities": {
+    "tools": [
+      {
+        "name": "mortgageAdvisor",
+        "description": "Answer mortgage questions using the knowledgebase PDFs and current best practices.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "question": {
+              "type": "string",
+              "minLength": 4,
+              "description": "User’s natural-language question"
+            }
+          },
+          "required": ["question"]
+        }
+      },
+      {
+        "name": "mortgageCalculator",
+        "description": "Estimate payment/interest given loan amount, rate, and term.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "loanAmount": {
+              "type": "number",
+              "minimum": 50000
+            },
+            "rate": {
+              "type": "number",
+              "minimum": 0.1,
+              "maximum": 20
+            },
+            "termYears": {
+              "type": "integer",
+              "minimum": 5,
+              "maximum": 40
+            }
+          },
+          "required": ["loanAmount", "rate", "termYears"]
+        }
+      },
+      {
+        "name": "submitLead",
+        "description": "Store marketing lead with explicit TCPA consent. Never collects SSN or date of birth.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "fullName": {
+              "type": "string",
+              "minLength": 2,
+              "description": "Full name of the lead"
+            },
+            "email": {
+              "type": "string",
+              "format": "email",
+              "description": "Email address"
+            },
+            "phone": {
+              "type": "string",
+              "minLength": 7,
+              "description": "Phone number"
+            },
+            "consent": {
+              "type": "boolean",
+              "description": "TCPA consent flag - must be true"
+            }
+          },
+          "required": ["fullName", "email", "phone", "consent"]
+        }
+      },
+      {
+        "name": "saveIntake",
+        "description": "Save non-sensitive prequalification intent data.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "purpose": {
+              "type": "string",
+              "enum": ["purchase", "refinance", "cashout", "secondhome", "investment"]
+            },
+            "occupancy": {
+              "type": "string",
+              "enum": ["primary", "secondhome", "investment"]
+            },
+            "propertyType": {
+              "type": "string",
+              "enum": ["singlefamily", "condo", "townhome", "multiunit"]
+            },
+            "estPrice": {
+              "type": "number",
+              "minimum": 0
+            },
+            "estDownPayment": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "required": ["purpose", "occupancy", "propertyType"]
+        }
+      },
+      {
+        "name": "startPrequalSession",
+        "description": "Generate secure handoff URL to New American Funding portal.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        }
+      }
+    ],
+    "webviews": {
+      "enabled": true,
+      "allowedDomains": [
+        "apply.newamericanfunding.com",
+        "www.newamericanfunding.com"
+      ]
+    }
+  },
+  "servers": {
+    "mortgagebroker-mcp": {
+      "transport": {
+        "type": "https",
+        "url": "https://billy-nonruinable-marie.ngrok-free.dev/mcp"
+      },
+      "description": "HTTPS MCP transport that exposes MortgageBroker tools and widget resources via ngrok tunnel."
+    }
+  },
+  "instructions": "MortgageBroker greets users with an interactive advisor that answers questions using the local PDF knowledgebase plus vetted mortgage best practices. Encourage follow-up questions, offer the mortgageCalculator tool when monthly payments come up, then transition to (1) lead capture with consent, (2) intent gathering, and (3) secure handoff to New American Funding's portal. Always ensure TCPA consent before proceeding. Never collect SSN, date of birth, or other sensitive PII. Focus on education and guidance, not legal/financial advice.",
+  "policy": {
+    "privacy": "https://apply.newamericanfunding.com/privacy",
+    "terms": "https://apply.newamericanfunding.com/terms",
+    "dataRetention": "Lead data is stored securely and retained according to TCPA and mortgage industry compliance standards. Users can request deletion by contacting support.",
+    "compliance": "TCPA-compliant lead capture with explicit consent. NMLS #2459410. Equal Housing Lender."
+  },
+  "modelRequirements": {
+    "minVersion": "gpt-4",
+    "capabilities": ["function_calling", "ui_components"]
+  },
+  "support": {
+    "email": "nikola.spadijer@nafinc.com",
+    "documentation": "https://apply.newamericanfunding.com/terms"
+  },
+  "legal": {
+    "nmls": "2459410",
+    "legalName": "New American Funding",
+    "disclaimer": "Equal Housing Lender. This is not a commitment to lend. Rates and programs subject to change without notice."
+  }
+}
