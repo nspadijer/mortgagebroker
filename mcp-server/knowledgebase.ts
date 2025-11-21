@@ -139,49 +139,53 @@ async function searchWebForMortgageInfo(question: string): Promise<AdvisorAnswer
 }
 
 export async function createKnowledgeBase() {
-  console.log("✓ Knowledge base initialized with FRED API integration");
+  console.log("✓ Knowledge base initialized with FRED API integration (prioritized)");
 
   return {
     async answer(question: string): Promise<AdvisorAnswer> {
-      // First, try to get real-time data from FRED API
-      console.log(`🔍 Checking FRED API for: ${question}`);
+      // PRIORITY 1: Always check FRED API first for real-time economic data
+      console.log(`🔍 [PRIORITY] Checking FRED API first for: ${question}`);
       const fredData = await searchRelevantData(question);
 
-      const topic = detectTopic(question);
-
-      // If we have FRED data and a matching topic, combine them
-      if (fredData && topic && TOPIC_RESPONSES[topic]) {
-        const response = TOPIC_RESPONSES[topic];
-        return {
-          summary: fredData + "\n\n" + response.summary,
-          highlights: response.highlights,
-          sources: [
-            { title: "FRED (Federal Reserve Economic Data)", snippet: "Real-time economic data from the St. Louis Fed" },
-            { title: "Mortgage Guidelines", snippet: "Industry-standard practices for " + topic }
-          ],
-          followUps: buildFollowUps(question)
-        };
-      }
-
-      // If we only have FRED data, return it
+      // If FRED has relevant data, prioritize it and return immediately
       if (fredData) {
+        console.log(`✅ FRED API data found - using as primary source`);
+        const topic = detectTopic(question);
         const keywords = question.toLowerCase().split(/\W+/).filter(w => w.length > 3);
         const relevantInsights = WEB_INSIGHTS.filter(insight =>
           keywords.some(kw => insight.toLowerCase().includes(kw))
         );
 
+        // Build a comprehensive response with FRED data as the primary content
+        let summary = fredData;
+        let highlights: string[] = [];
+
+        // Add topic-specific guidance as supplementary context (if available)
+        if (topic && TOPIC_RESPONSES[topic]) {
+          const response = TOPIC_RESPONSES[topic];
+          summary += "\n\n**Additional Context:**\n" + response.summary;
+          highlights = response.highlights;
+        } else if (relevantInsights.length > 0) {
+          // Add general insights as context
+          highlights = relevantInsights.slice(0, 3);
+        }
+
         return {
-          summary: fredData + "\n\nThese rates are updated regularly by the Federal Reserve and reflect current market conditions.",
-          highlights: relevantInsights.slice(0, 3),
+          summary,
+          highlights,
           sources: [
-            { title: "FRED (Federal Reserve Economic Data)", snippet: "Official economic data from the St. Louis Federal Reserve" },
-            { title: "Market Analysis", snippet: "Current mortgage market conditions and trends" }
+            { title: "FRED (Federal Reserve Economic Data)", snippet: "Official real-time data from the St. Louis Federal Reserve - PRIMARY SOURCE" },
+            { title: "Market Analysis", snippet: "Current economic conditions and mortgage market trends" }
           ],
           followUps: buildFollowUps(question)
         };
       }
 
-      // If we have a topic match but no FRED data
+      console.log(`ℹ️  No FRED data available - falling back to knowledge base`);
+
+      // PRIORITY 2: Knowledge base (only if FRED has no data)
+      const topic = detectTopic(question);
+
       if (topic && TOPIC_RESPONSES[topic]) {
         const response = TOPIC_RESPONSES[topic];
         return {
@@ -195,13 +199,13 @@ export async function createKnowledgeBase() {
         };
       }
 
-      // Fallback to general insights
+      // PRIORITY 3: General insights fallback
       const keywords = question.toLowerCase().split(/\W+/).filter(w => w.length > 3);
       const relevantInsights = WEB_INSIGHTS.filter(insight =>
         keywords.some(kw => insight.toLowerCase().includes(kw))
       );
 
-      // If no relevant insights found, try web search
+      // PRIORITY 4: Web search (if no insights found)
       if (relevantInsights.length === 0) {
         console.log(`📡 Searching web for: ${question}`);
         const webResult = await searchWebForMortgageInfo(question);
