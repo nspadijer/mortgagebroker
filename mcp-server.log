@@ -1,0 +1,92 @@
+✓ Knowledge base initialized (fast mode with web search fallback)
+MortgageBroker MCP listening on http://127.0.0.1:4100/mcp
+📥 submitLead received input: {
+  "fullName": "Test Flow User",
+  "email": "testflow@example.com",
+  "phone": "5559876543",
+  "consent": true,
+  "intake": {
+    "purpose": "purchase",
+    "occupancy": "primary",
+    "propertyType": "singlefamily",
+    "estPrice": 500000,
+    "estDownPayment": 100000
+  }
+}
+✓ Intake data found: {
+  "purpose": "purchase",
+  "occupancy": "primary",
+  "propertyType": "singlefamily",
+  "estPrice": 500000,
+  "estDownPayment": 100000
+}
+✓ Intake data saved to database
+📧 Sending email with intake data: YES
+✅ Lead email sent to nikola.cfn@gmail.com for Test Flow User
+📥 submitLead received input: {
+  "fullName": "Jane Smith",
+  "email": "nikola.cfn@gmail.com",
+  "phone": "3105551234",
+  "consent": true,
+  "intake": {
+    "purpose": "refinance",
+    "occupancy": "primary",
+    "propertyType": "condo",
+    "estPrice": 750000,
+    "estDownPayment": 150000
+  }
+}
+✓ Intake data found: {
+  "purpose": "refinance",
+  "occupancy": "primary",
+  "propertyType": "condo",
+  "estPrice": 750000,
+  "estDownPayment": 150000
+}
+✓ Intake data saved to database
+📧 Sending email with intake data: YES
+✅ Lead email sent to nikola.cfn@gmail.com for Jane Smith
+📡 Searching web for: how to get mortgage
+🔍 Web search attempted for: how to get mortgage (using fallback)
+📥 submitLead received input: {
+  "fullName": "Nikola Spadijer",
+  "email": "nspadijer@hotmail.com",
+  "phone": "7864583382",
+  "consent": true,
+  "intake": {
+    "purpose": "refinance",
+    "occupancy": "investment",
+    "propertyType": "condo",
+    "estPrice": 800000
+  }
+}
+✓ Intake data found: {
+  "purpose": "refinance",
+  "occupancy": "investment",
+  "propertyType": "condo",
+  "estPrice": 800000
+}
+✓ Intake data saved to database
+📧 Sending email with intake data: YES
+✅ Lead email sent to nikola.cfn@gmail.com for Nikola Spadijer
+📡 Searching web for: How to get a mortgage?
+🔍 Web search attempted for: How to get a mortgage? (using fallback)
+📥 submitLead received input: {
+  "fullName": "Nikola Spadijer",
+  "email": "nspadijer@hotmail.com",
+  "phone": "7864583382",
+  "consent": true,
+  "intake": {
+    "purpose": "purchase",
+    "occupancy": "primary",
+    "propertyType": "singlefamily"
+  }
+}
+✓ Intake data found: {
+  "purpose": "purchase",
+  "occupancy": "primary",
+  "propertyType": "singlefamily"
+}
+✓ Intake data saved to database
+📧 Sending email with intake data: YES
+✅ Lead email sent to nikola.cfn@gmail.com for Nikola Spadijer

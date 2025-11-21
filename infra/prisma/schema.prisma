@@ -1,0 +1,28 @@
+// infra/prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Lead {
+  id        String   @id @default(cuid())
+  fullName  String
+  email     String
+  phone     String
+  consent   Boolean
+  createdAt DateTime @default(now())
+}
+
+model Intake {
+  id             String   @id @default(cuid())
+  purpose        String
+  occupancy      String
+  propertyType   String
+  estPrice       Int?
+  estDownPayment Int?
+  createdAt      DateTime @default(now())
+}
