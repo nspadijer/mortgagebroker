@@ -6,11 +6,13 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:full": "npx prisma generate --schema=infra/prisma/schema.prisma && npm run build && npm run mcp:compile",
     "preview": "vite preview",
     "mcp:compile": "tsc -p mcp-server/tsconfig.json",
     "mcp:dev": "npm run build && npm run mcp:compile && node --env-file=.env dist/mcp-server/server.js",
     "mcp:start": "npm run build && npm run mcp:compile && node --env-file=.env dist/mcp-server/server.js",
-    "prisma": "prisma --schema=infra/prisma/schema.prisma"
+    "prisma": "prisma --schema=infra/prisma/schema.prisma",
+    "prisma:generate": "npx prisma generate --schema=infra/prisma/schema.prisma"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.20.2",

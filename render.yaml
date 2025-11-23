@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: mortgagebroker-mcp
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: npm install && npx prisma generate --schema=infra/prisma/schema.prisma && npm run build && npm run mcp:compile
+    startCommand: node --env-file=.env dist/mcp-server/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: FRED_API_KEY
+        sync: false
+      - key: LEAD_EMAIL_TO
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: PORT
+        value: 4100
+      - key: HOST
+        value: 0.0.0.0
+    healthCheckPath: /
