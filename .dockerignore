@@ -1,0 +1,47 @@
+# Dependencies
+node_modules
+npm-debug.log
+yarn-error.log
+package-lock.json
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Build outputs (will be rebuilt)
+dist
+
+# Development files
+.git
+.gitignore
+.vscode
+.idea
+
+# Documentation
+*.md
+!README.md
+
+# Logs
+logs
+*.log
+mcp-server.log
+ngrok.log
+audit.log
+
+# Test files
+coverage
+.tmp
+temp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Deployment configs
+deploy.html
+deploy.txt
+test-fred.json
+
+# Prisma migrations (use migrate deploy instead)
+prisma/migrations

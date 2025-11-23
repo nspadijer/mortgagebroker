@@ -5,7 +5,8 @@ services:
     plan: free
     region: oregon
     buildCommand: npm install && npx prisma generate --schema=infra/prisma/schema.prisma && npm run build && npm run mcp:compile
-    startCommand: node --env-file=.env dist/mcp-server/server.js
+    startCommand: node dist/mcp-server/server.js
+    healthCheckPath: /
     envVars:
       - key: NODE_ENV
         value: production
@@ -18,13 +19,12 @@ services:
       - key: SMTP_HOST
         sync: false
       - key: SMTP_PORT
-        sync: false
+        value: "587"
       - key: SMTP_USER
         sync: false
       - key: SMTP_PASS
         sync: false
       - key: PORT
-        value: 4100
+        value: "10000"
       - key: HOST
-        value: 0.0.0.0
-    healthCheckPath: /
+        value: "0.0.0.0"
