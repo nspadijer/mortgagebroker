@@ -4,7 +4,7 @@ services:
     runtime: node
     plan: free
     region: oregon
-    buildCommand: npm install && npx prisma generate --schema=infra/prisma/schema.prisma && npm run build && npm run mcp:compile
+    buildCommand: npm ci && npx prisma generate --schema=infra/prisma/schema.prisma && npm run build && npm run mcp:compile
     startCommand: node dist/mcp-server/server.js
     healthCheckPath: /
     envVars:
