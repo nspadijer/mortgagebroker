@@ -316,8 +316,23 @@ function formatCurrency(value: number) {
 
 const widgetHtml = loadWidgetTemplate();
 
-const port = Number(process.env.PORT ?? 2091);
-const host = process.env.HOST ?? "127.0.0.1";
+// Parse port with fallback (Render provides PORT, default to 2091 for local dev)
+const port = (() => {
+  const envPort = process.env.PORT;
+  if (!envPort || envPort.trim() === "") {
+    return 2091; // Default for local development
+  }
+  const parsed = Number(envPort);
+  if (isNaN(parsed) || parsed <= 0) {
+    console.warn(`Invalid PORT=${envPort}, using default 2091`);
+    return 2091;
+  }
+  return parsed;
+})();
+
+// Host: 0.0.0.0 for production (containers), 127.0.0.1 for local dev
+const host = process.env.HOST || (process.env.NODE_ENV === "production" ? "0.0.0.0" : "127.0.0.1");
+
 const MCP_PATH = "/mcp";
 
 const httpServer = createHttpServer(async (req, res) => {
