@@ -130,9 +130,9 @@
     "mortgagebroker-mcp": {
       "transport": {
         "type": "https",
-        "url": "https://billy-nonruinable-marie.ngrok-free.dev/mcp"
+        "url": "https://mortgagebroker.onrender.com/mcp"
       },
-      "description": "HTTPS MCP transport that exposes MortgageBroker tools and widget resources via ngrok tunnel."
+      "description": "Production MCP server hosted on Render with FRED API integration for real-time mortgage rates and economic data."
     }
   },
   "instructions": "MortgageBroker greets users with an interactive advisor that answers questions using the local PDF knowledgebase plus vetted mortgage best practices. Encourage follow-up questions, offer the mortgageCalculator tool when monthly payments come up, then transition to (1) lead capture with consent, (2) intent gathering, and (3) secure handoff to New American Funding's portal. Always ensure TCPA consent before proceeding. Never collect SSN, date of birth, or other sensitive PII. Focus on education and guidance, not legal/financial advice.",
