@@ -92,10 +92,21 @@ const createId = () =>
   typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
 
 async function callMortgageTool<T>(name: string, payload?: unknown): Promise<T> {
+  console.log(`[callMortgageTool] Calling ${name} with payload:`, payload);
+
   if (typeof window !== "undefined" && window.openai?.callTool) {
-    return window.openai.callTool<T>(name, payload);
+    console.log(`[callMortgageTool] Using window.openai.callTool`);
+    try {
+      const result = await window.openai.callTool<T>(name, payload);
+      console.log(`[callMortgageTool] Result from window.openai.callTool:`, result);
+      return result;
+    } catch (error) {
+      console.error(`[callMortgageTool] Error from window.openai.callTool:`, error);
+      throw error;
+    }
   }
 
+  console.log(`[callMortgageTool] Using mock implementation (not in ChatGPT)`);
   await new Promise((resolve) => setTimeout(resolve, 250));
 
   if (name === "startPrequalSession") {
@@ -122,6 +133,11 @@ async function callMortgageTool<T>(name: string, payload?: unknown): Promise<T> 
     const { loanAmount, rate, termYears } = payload as { loanAmount: number; rate: number; termYears: number };
     const result = computeLocalMortgage(loanAmount, rate, termYears);
     return { calculator: result } as T;
+  }
+
+  if (name === "submitLead") {
+    console.log(`[callMortgageTool] Mock submitLead - would send to MCP server:`, payload);
+    return { ok: true, message: "Lead submitted (mock)" } as T;
   }
 
   return { ok: true } as T;
@@ -904,10 +920,13 @@ function LeadCapture({ intakeData, onNext }: { intakeData: SaveIntakeInput | nul
         intake: intakeData
       };
 
-      await callMortgageTool("submitLead", combinedPayload);
+      console.log("[submitLead] Sending payload:", combinedPayload);
+      const result = await callMortgageTool("submitLead", combinedPayload);
+      console.log("[submitLead] Result:", result);
       await showToast({ title: "Lead saved", tone: "success" });
       onNext();
     } catch (error) {
+      console.error("[submitLead] Error:", error);
       await showToast({
         title: "Unable to save lead",
         description: error instanceof Error ? error.message : "Unknown error",
