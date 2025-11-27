@@ -192,46 +192,55 @@ function registerTools(server: McpServer) {
       }
     },
     async (input) => {
-      // Parse the full input including optional intake data
-      const fullInput = input as any;
-      console.log("📥 submitLead received input:", JSON.stringify(fullInput, null, 2));
+      try {
+        // Parse the full input including optional intake data
+        const fullInput = input as any;
+        console.log("📥 submitLead received input:", JSON.stringify(fullInput, null, 2));
 
-      // Parse the input with the schema (now includes optional intake)
-      const payload = SubmitLeadInput.parse(input);
+        // Parse the input with the schema (now includes optional intake)
+        const payload = SubmitLeadInput.parse(input);
 
-      // Extract intake data if provided
-      const rawIntake = payload.intake;
+        // Extract intake data if provided
+        const rawIntake = payload.intake;
 
-      // Create lead record WITHOUT the intake field
-      const { intake, ...leadData } = payload;
-      const leadRecord = { ...leadData, createdAt: new Date().toISOString() };
+        // Create lead record WITHOUT the intake field
+        const { intake, ...leadData } = payload;
+        const leadRecord = { ...leadData, createdAt: new Date().toISOString() };
 
-      // Save lead
-      await persistLead(leadRecord);
+        // Save lead
+        console.log("💾 Saving lead to database...");
+        await persistLead(leadRecord);
+        console.log("✅ Lead saved successfully");
 
-      // If intake data is provided, save it too
-      let intakeData = null;
-      if (rawIntake) {
-        console.log("✓ Intake data found:", JSON.stringify(rawIntake, null, 2));
-        // Already parsed by Zod in SubmitLeadInput schema
-        intakeData = rawIntake;
-        const intakeRecord = { ...rawIntake, createdAt: new Date().toISOString() };
-        await persistIntake(intakeRecord);
-        console.log("✓ Intake data saved to database");
-      } else {
-        console.log("⚠️  No intake data found in request");
-      }
-
-      // Send email with both lead and intake data
-      console.log("📧 Sending email with intake data:", intakeData ? "YES" : "NO");
-      await sendLeadEmail(leadRecord, intakeData);
-
-      return {
-        content: [{ type: "text", text: `Lead saved for ${leadRecord.fullName}.` }],
-        structuredContent: {
-          step: "handoff"
+        // If intake data is provided, save it too
+        let intakeData = null;
+        if (rawIntake) {
+          console.log("✓ Intake data found:", JSON.stringify(rawIntake, null, 2));
+          // Already parsed by Zod in SubmitLeadInput schema
+          intakeData = rawIntake;
+          const intakeRecord = { ...rawIntake, createdAt: new Date().toISOString() };
+          await persistIntake(intakeRecord);
+          console.log("✓ Intake data saved to database");
+        } else {
+          console.log("⚠️  No intake data found in request");
         }
-      };
+
+        // Send email with both lead and intake data
+        console.log("📧 Sending email with intake data:", intakeData ? "YES" : "NO");
+        await sendLeadEmail(leadRecord, intakeData);
+        console.log("✅ Email sent (or logged if SMTP not configured)");
+
+        return {
+          content: [{ type: "text", text: `Lead saved for ${leadRecord.fullName}.` }],
+          structuredContent: {
+            step: "handoff"
+          }
+        };
+      } catch (error) {
+        console.error("❌ Error in submitLead:", error);
+        console.error("Error stack:", error instanceof Error ? error.stack : "No stack trace");
+        throw new Error(error instanceof Error ? error.message : "Failed to submit lead");
+      }
     }
   );
 
