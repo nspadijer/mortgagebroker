@@ -1,4 +1,4 @@
-import { createTransport } from "nodemailer";
+import sgMail from "@sendgrid/mail";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 
@@ -20,18 +20,16 @@ type IntakeData = {
 
 export async function sendLeadEmail(lead: LeadData, intake?: IntakeData | null): Promise<void> {
   const emailTo = process.env.LEAD_EMAIL_TO || "nikola.spadijer@nafinc.com";
-  const smtpHost = process.env.SMTP_HOST;
-  const smtpPort = parseInt(process.env.SMTP_PORT || "587");
-  const smtpUser = process.env.SMTP_USER;
-  const smtpPass = process.env.SMTP_PASS;
+  const sendGridApiKey = process.env.SENDGRID_API_KEY || process.env.SMTP_PASS;
+  const fromEmail = process.env.SENDGRID_FROM || process.env.SMTP_USER || emailTo;
 
   // Log lead to file
   await logLeadToFile(lead);
 
   // If SMTP is not configured, just log and return
-  if (!smtpHost || !smtpUser || !smtpPass) {
+  if (!sendGridApiKey) {
     console.log(`✉️  Lead captured: ${lead.fullName} (${lead.email}) - Email would be sent to ${emailTo}`);
-    console.log(`⚠️  SMTP not configured. Set SMTP_HOST, SMTP_USER, and SMTP_PASS in .env to enable email sending.`);
+    console.log(`⚠️  SendGrid API key not configured. Set SENDGRID_API_KEY/SENDGRID_FROM in .env to enable email sending.`);
     return;
   }
 
@@ -185,31 +183,43 @@ Next Steps: Follow up within 24 hours for best conversion rates.
   `.trim();
 
   try {
-    // Create transporter
-    const transporter = createTransport({
-      host: smtpHost,
-      port: smtpPort,
-      secure: smtpPort === 465,
-      auth: {
-        user: smtpUser,
-        pass: smtpPass
-      }
-    });
+    sgMail.setApiKey(sendGridApiKey);
 
-    // Send email
-    await transporter.sendMail({
-      from: `MortgageBroker App <${smtpUser}>`,
+    // Set a timeout for the SendGrid request (10 seconds max)
+    const sendPromise = sgMail.send({
       to: emailTo,
+      from: {
+        email: fromEmail,
+        name: "MortgageBroker App"
+      },
       subject,
       text: textContent,
       html: htmlContent,
       replyTo: lead.email
     });
 
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('SendGrid request timeout (10s)')), 10000)
+    );
+
+    await Promise.race([sendPromise, timeoutPromise]);
+
     console.log(`✅ Lead email sent to ${emailTo} for ${lead.fullName}`);
   } catch (error) {
     console.error("❌ Failed to send lead email:", error);
+
+    // Log the specific error for debugging
+    if (error && typeof error === 'object' && 'response' in error) {
+      const sgError = error as any;
+      console.error("SendGrid error details:", {
+        statusCode: sgError.code,
+        message: sgError.message,
+        body: sgError.response?.body
+      });
+    }
+
     // Don't throw - we don't want to block the user flow if email fails
+    // The lead is still saved to the database/logs
   }
 }
 
