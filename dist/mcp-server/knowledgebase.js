@@ -1,4 +1,5 @@
 import { searchRelevantData } from "./fred-api.js";
+import { askOpenAI, initializeOpenAI, isOpenAIAvailable } from "./openai-service.js";
 // Intelligent question analyzer that understands intent
 function analyzeQuestion(question) {
     const q = question.toLowerCase();
@@ -233,11 +234,16 @@ function buildFollowUps(category) {
     return followUps.slice(0, 3);
 }
 export async function createKnowledgeBase() {
-    console.log("✓ Knowledge base initialized with FRED API integration and intelligent Q&A");
+    // Initialize OpenAI client (if API key is configured)
+    initializeOpenAI();
+    console.log("✓ Knowledge base initialized with FRED API, intelligent Q&A, and OpenAI fallback");
+    console.log(`  - FRED API: ✅ Always checked first`);
+    console.log(`  - Knowledge Base: ✅ 12 curated categories`);
+    console.log(`  - OpenAI GPT-4: ${isOpenAIAvailable() ? '✅ Available as fallback' : '⚠️  Not configured (set OPENAI_API_KEY)'}`);
     return {
         async answer(question) {
             // PRIORITY 1: Always check FRED API first for real-time economic data
-            console.log(`🔍 [PRIORITY] Checking FRED API first for: ${question}`);
+            console.log(`🔍 [PRIORITY 1] Checking FRED API first for: ${question}`);
             const fredData = await searchRelevantData(question);
             // If FRED has relevant data, prioritize it and return immediately
             if (fredData) {
@@ -261,8 +267,9 @@ export async function createKnowledgeBase() {
                     followUps: buildFollowUps(analysis.category)
                 };
             }
-            console.log(`ℹ️  No FRED data available - using intelligent knowledge base`);
+            console.log(`ℹ️  No FRED data available - checking knowledge base`);
             // PRIORITY 2: Intelligent knowledge base analysis
+            console.log(`🔍 [PRIORITY 2] Checking knowledge base for: ${question}`);
             const analysis = analyzeQuestion(question);
             const knowledgeResponse = KNOWLEDGE_BASE[analysis.category];
             if (knowledgeResponse) {
@@ -277,8 +284,39 @@ export async function createKnowledgeBase() {
                     followUps: buildFollowUps(analysis.category)
                 };
             }
-            // PRIORITY 3: Fallback to general guidance
-            console.log(`⚠️  No specific match found, using general guidance`);
+            // PRIORITY 3: OpenAI GPT-4 fallback (if available)
+            if (isOpenAIAvailable()) {
+                console.log(`🤖 [PRIORITY 3] Using OpenAI GPT-4 for dynamic answer`);
+                try {
+                    // Build context from FRED + knowledge base (if any)
+                    let context = "";
+                    if (fredData) {
+                        context += `FRED Data:\n${fredData}\n\n`;
+                    }
+                    const generalResponse = KNOWLEDGE_BASE.general;
+                    context += `General Mortgage Guidelines:\n${generalResponse.summary}`;
+                    const aiAnswer = await askOpenAI(question, context);
+                    return {
+                        summary: aiAnswer,
+                        highlights: [
+                            "This answer was generated using AI with strict mortgage/real estate focus",
+                            "Always consult a licensed loan officer for specific loan quotes",
+                            "NMLS #2459410 • Equal Housing Lender"
+                        ],
+                        sources: [
+                            { title: "AI-Powered Analysis", snippet: "GPT-4 with strict mortgage/real estate guardrails" },
+                            { title: "General Guidelines", snippet: "Industry best practices and compliance standards" }
+                        ],
+                        followUps: buildFollowUps(analysis.category)
+                    };
+                }
+                catch (error) {
+                    console.error(`❌ OpenAI error:`, error);
+                    // Fall through to general guidance if OpenAI fails
+                }
+            }
+            // PRIORITY 4: Final fallback to general guidance
+            console.log(`⚠️  [PRIORITY 4] Using general guidance as final fallback`);
             const generalResponse = KNOWLEDGE_BASE.general;
             return {
                 summary: `I understand you're asking about "${question}". ${generalResponse.summary}`,

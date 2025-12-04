@@ -24,5 +24,7 @@ services:
         sync: false
       - key: SMTP_PASS
         sync: false
+      - key: OPENAI_API_KEY
+        sync: false
     # Note: PORT is automatically provided by Render (usually 10000)
     # Note: HOST is auto-detected (0.0.0.0 in production, 127.0.0.1 in dev)

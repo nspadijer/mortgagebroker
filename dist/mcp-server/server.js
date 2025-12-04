@@ -155,40 +155,50 @@ function registerTools(server) {
             "openai/widgetAccessible": true
         }
     }, async (input) => {
-        // Parse the full input including optional intake data
-        const fullInput = input;
-        console.log("📥 submitLead received input:", JSON.stringify(fullInput, null, 2));
-        // Parse the input with the schema (now includes optional intake)
-        const payload = SubmitLeadInput.parse(input);
-        // Extract intake data if provided
-        const rawIntake = payload.intake;
-        // Create lead record WITHOUT the intake field
-        const { intake, ...leadData } = payload;
-        const leadRecord = { ...leadData, createdAt: new Date().toISOString() };
-        // Save lead
-        await persistLead(leadRecord);
-        // If intake data is provided, save it too
-        let intakeData = null;
-        if (rawIntake) {
-            console.log("✓ Intake data found:", JSON.stringify(rawIntake, null, 2));
-            // Already parsed by Zod in SubmitLeadInput schema
-            intakeData = rawIntake;
-            const intakeRecord = { ...rawIntake, createdAt: new Date().toISOString() };
-            await persistIntake(intakeRecord);
-            console.log("✓ Intake data saved to database");
-        }
-        else {
-            console.log("⚠️  No intake data found in request");
-        }
-        // Send email with both lead and intake data
-        console.log("📧 Sending email with intake data:", intakeData ? "YES" : "NO");
-        await sendLeadEmail(leadRecord, intakeData);
-        return {
-            content: [{ type: "text", text: `Lead saved for ${leadRecord.fullName}.` }],
-            structuredContent: {
-                step: "handoff"
+        try {
+            // Parse the full input including optional intake data
+            const fullInput = input;
+            console.log("📥 submitLead received input:", JSON.stringify(fullInput, null, 2));
+            // Parse the input with the schema (now includes optional intake)
+            const payload = SubmitLeadInput.parse(input);
+            // Extract intake data if provided
+            const rawIntake = payload.intake;
+            // Create lead record WITHOUT the intake field
+            const { intake, ...leadData } = payload;
+            const leadRecord = { ...leadData, createdAt: new Date().toISOString() };
+            // Save lead
+            console.log("💾 Saving lead to database...");
+            await persistLead(leadRecord);
+            console.log("✅ Lead saved successfully");
+            // If intake data is provided, save it too
+            let intakeData = null;
+            if (rawIntake) {
+                console.log("✓ Intake data found:", JSON.stringify(rawIntake, null, 2));
+                // Already parsed by Zod in SubmitLeadInput schema
+                intakeData = rawIntake;
+                const intakeRecord = { ...rawIntake, createdAt: new Date().toISOString() };
+                await persistIntake(intakeRecord);
+                console.log("✓ Intake data saved to database");
             }
-        };
+            else {
+                console.log("⚠️  No intake data found in request");
+            }
+            // Send email with both lead and intake data
+            console.log("📧 Sending email with intake data:", intakeData ? "YES" : "NO");
+            await sendLeadEmail(leadRecord, intakeData);
+            console.log("✅ Email sent (or logged if SMTP not configured)");
+            return {
+                content: [{ type: "text", text: `Lead saved for ${leadRecord.fullName}.` }],
+                structuredContent: {
+                    step: "handoff"
+                }
+            };
+        }
+        catch (error) {
+            console.error("❌ Error in submitLead:", error);
+            console.error("Error stack:", error instanceof Error ? error.stack : "No stack trace");
+            throw new Error(error instanceof Error ? error.message : "Failed to submit lead");
+        }
     });
     server.registerTool("saveIntake", {
         title: "Save mortgage intake",
@@ -255,8 +265,21 @@ function formatCurrency(value) {
     return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value);
 }
 const widgetHtml = loadWidgetTemplate();
-const port = Number(process.env.PORT ?? 2091);
-const host = process.env.HOST ?? "127.0.0.1";
+// Parse port with fallback (Render provides PORT, default to 2091 for local dev)
+const port = (() => {
+    const envPort = process.env.PORT;
+    if (!envPort || envPort.trim() === "") {
+        return 2091; // Default for local development
+    }
+    const parsed = Number(envPort);
+    if (isNaN(parsed) || parsed <= 0) {
+        console.warn(`Invalid PORT=${envPort}, using default 2091`);
+        return 2091;
+    }
+    return parsed;
+})();
+// Host: 0.0.0.0 for production (containers), 127.0.0.1 for local dev
+const host = process.env.HOST || (process.env.NODE_ENV === "production" ? "0.0.0.0" : "127.0.0.1");
 const MCP_PATH = "/mcp";
 const httpServer = createHttpServer(async (req, res) => {
     if (!req.url) {
